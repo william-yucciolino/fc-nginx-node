@@ -1,0 +1,47 @@
+version: '3'
+
+services: 
+  server:
+    container_name: server
+    restart: always
+    build:
+        context: ./server
+    ports:
+      - "8080:80"
+    # entrypoint: wait-for app:3000 -t 40 -- ./start.sh
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+  app:
+    container_name: app
+    restart: always
+    build: 
+      context: ./app
+    entrypoint: wait-for db:3306 -t 40 -- ./start.sh
+    volumes: 
+      - ./app:/usr/src/app
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  db:
+    container_name: app_db
+    image: mysql:5.7
+    restart: always
+    tty: true
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=nodedb
+    ports:
+      - "3306:3306"
+    volumes: 
+      - ./mysql/data:/var/lib/mysql
+    networks: 
+      - app-network
+
+networks: 
+  app-network:
+    driver: bridge 
